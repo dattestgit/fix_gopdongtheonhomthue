@@ -186,7 +186,7 @@ END
   
 IF @DataType = 'BottomGrid'  
 BEGIN  
- SET @IsGroupingByTaxGroup=1
+-- SET @IsGroupingByTaxGroup=1
  IF @IsGroupingByTaxGroup =1
  BEGIN
     SET @sSQL = N'  
