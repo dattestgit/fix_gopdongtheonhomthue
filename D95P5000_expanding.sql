@@ -186,28 +186,66 @@ END
   
 IF @DataType = 'BottomGrid'  
 BEGIN  
-  SET @sSQL = N'  
-  SELECT  T00.VoucherID,   
-     T00.SerialNo,  
-     T00.RefNo AS InvoiceNo,  
-     T00.RefDate AS InvoiceDate,  
-     T00.TransID,   
-     T00.OrderNum,  
-     T00.InventoryName,  
-     T00.UnitName,  
-     T00.Quantity AS OQuantity,  
-     T00.UnitPrice,  
-     T00.Amount AS OAmount,  
-     T00.VATRate/100 AS VATRate,  
-     T00.CVAT AS VATOAmount,  
-     T00.Amount + T00.CVAT AS PamentOAmount  
-  FROM  D95T5000 T00 WITH(NOLOCK)  
-  WHERE  '+CASE WHEN @IsMultiInvoice = 0 THEN 'T00.VoucherID = '''+@VoucherID+''''   
-             ELSE 'T00.VoucherID IN (SELECT Key01ID AS VoucherID FROM D91T9009 WHERE UserID = '''+@UserID+''' AND HostID = '''+@HostID+''' AND FormID = ''D95F5000'')' END+'  
-  ORDER BY T00.RefDate, TRY_CONVERT(INT, T00.RefNo), T00.OrderNum  
-  '  
-  --PRINT(@sSQL)  
-  EXEC(@sSQL)     
+ SET @IsGroupingByTaxGroup=1
+ IF @IsGroupingByTaxGroup =1
+ BEGIN
+    SET @sSQL = N'  
+        SELECT  
+            T00.VoucherID,   
+            T00.SerialNo,  
+            T00.RefNo AS InvoiceNo,  
+            T00.RefDate AS InvoiceDate,  
+            MAX(T00.TransID) AS TransID,   
+            MAX(T00.OrderNum) AS OrderNum,  
+            T00.VatGroup, 
+			MAX(T00.InventoryName) AS InventoryName,
+            MAX(T00.UnitName) AS UnitName,
+            SUM(T00.Quantity) AS OQuantity,  
+            MAX(T00.UnitPrice) AS UnitPrice,  
+            SUM(T00.Amount) AS OAmount,  
+            T00.VATRate / 100 AS VATRate,  
+            SUM(T00.CVAT) AS VATOAmount,  
+            SUM(T00.Amount + T00.CVAT) AS PamentOAmount  
+        FROM D95T5000 T00 WITH(NOLOCK)  
+		WHERE  '+CASE WHEN @IsMultiInvoice = 0 THEN 'T00.VoucherID = '''+@VoucherID+''''   
+				   ELSE 'T00.VoucherID IN (SELECT Key01ID AS VoucherID FROM D91T9009 WHERE UserID = '''+@UserID+''' AND HostID = '''+@HostID+''' AND FormID = ''D95F5000'')' END+'  
+        GROUP BY 
+            T00.VoucherID,
+            T00.SerialNo,
+            T00.RefNo,
+            T00.RefDate,
+            T00.VatGroup,
+            T00.VATRate
+	  '  
+	  --PRINT(@sSQL)  
+    EXEC(@sSQL)  
+	RETURN   
+ END
+ ELSE
+ BEGIN
+    SET @sSQL = N'  
+	  SELECT  T00.VoucherID,   
+		 T00.SerialNo,  
+		 T00.RefNo AS InvoiceNo,  
+		 T00.RefDate AS InvoiceDate,  
+		 T00.TransID,   
+		 T00.OrderNum,  
+		 T00.InventoryName,  
+		 T00.UnitName,  
+		 T00.Quantity AS OQuantity,  
+		 T00.UnitPrice,  
+		 T00.Amount AS OAmount,  
+		 T00.VATRate/100 AS VATRate,  
+		 T00.CVAT AS VATOAmount,  
+		 T00.Amount + T00.CVAT AS PamentOAmount  
+	  FROM  D95T5000 T00 WITH(NOLOCK)  
+	  WHERE  '+CASE WHEN @IsMultiInvoice = 0 THEN 'T00.VoucherID = '''+@VoucherID+''''   
+				 ELSE 'T00.VoucherID IN (SELECT Key01ID AS VoucherID FROM D91T9009 WHERE UserID = '''+@UserID+''' AND HostID = '''+@HostID+''' AND FormID = ''D95F5000'')' END+'  
+	  ORDER BY T00.RefDate, TRY_CONVERT(INT, T00.RefNo), T00.OrderNum  
+	  '  
+	  --PRINT(@sSQL)  
+	  EXEC(@sSQL)     
+ END
 END  
   
 IF @DataType = 'ReturnData'  
@@ -256,11 +294,21 @@ BEGIN
   EXEC D06P2281 @DivisionID, '', '', 0, 0, '', 1, 'D95F5000', @TransTypeID, '', 0, @VoucherID  
   RETURN  
  END  
+
  IF @FormCall = 'D06F2130'  
  BEGIN  
-  EXEC D06P3911 '', 0, 1, @TransTypeID, '', @VoucherID, 'D95F5000'  
-  RETURN  
+   IF @IsGroupingByTaxGroup=1
+	   BEGIN
+		EXEC D06P3811 @UserID,@TransTypeID,'D95F5000',@VoucherID,@IsGroupingByTaxGroup 
+		RETURN
+	   END
+   ELSE 
+	   BEGIN
+		EXEC D06P3911 '', 0, 1, @TransTypeID, '', @VoucherID, 'D95F5000'  
+	   END
+   RETURN 
  END  
+
  IF @FormCall = 'D06F2260'  
  BEGIN  
   EXEC D06P2261 '', 1, @TransTypeID, @VoucherID, 'D95F5000'  
