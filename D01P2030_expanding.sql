@@ -164,7 +164,7 @@ BEGIN
 	   AND T91.Key02ID = '''+@FormID+'''  
 	   AND T95.IsCreated = 0  
 	   AND T95.Amount <> 0  
-	   GROUP BY T95.RefNo,T95.RefDate,T95.SerialNo,T95.VatGroup
+	   GROUP BY T95.RefNo,T95.RefDate,T95.SerialNo,T95.VatGroup,T95.PaymentMethodID,T95.VoucherID
 
 	   ,T95.ObjectTypeID,		T95.ObjectName,T95.TaxCode,T95.ObjectAddress,T95.ObjectID,T95.VATGroupID,T95.VATRate,T1.CreditAccountID,
 			T1.DebitAccountID,D.AccountID,C.AccountID,D.OffAccount,C.OffAccount
