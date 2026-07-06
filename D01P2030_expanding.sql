@@ -98,7 +98,7 @@ BEGIN
 		MAX(T1.DefaultAna01ID) AS Ana01ID, MAX(T1.DefaultAna02ID) AS Ana02ID, MAX(T1.DefaultAna03ID) AS Ana03ID, MAX(T1.DefaultAna04ID) AS Ana04ID , MAX(T1.DefaultAna05ID) AS Ana05ID,  
 		MAX(T1.DefaultAna06ID) AS Ana06ID, MAX(T1.DefaultAna07ID) AS Ana07ID, MAX(T1.DefaultAna08ID) AS Ana08ID, MAX(T1.DefaultAna09ID) AS Ana09ID, MAX(T1.DefaultAna10ID) AS Ana10ID,  
 		MAX(T1.DefaultAna01ID) AS DefaultAna01ID, MAX(T1.DefaultAna02ID) AS DefaultAna02ID, MAX(T1.DefaultAna03ID) AS DefaultAna03ID, MAX(T1.DefaultAna04ID) AS DefaultAna04ID, MAX(T1.DefaultAna05ID) AS DefaultAna05ID ,  
-		MAX(T1.DefaultAna06ID), MAX(T1.DefaultAna07ID) AS DefaultAna07ID, MAX(T1.DefaultAna08ID) AS DefaultAna08ID, MAX(T1.DefaultAna09ID) AS DefaultAna09ID, MAX(T1.DefaultAna10ID) AS DefaultAna10ID,  
+		MAX(T1.DefaultAna06ID) AS DefaultAna06ID, MAX(T1.DefaultAna07ID) AS DefaultAna07ID, MAX(T1.DefaultAna08ID) AS DefaultAna08ID, MAX(T1.DefaultAna09ID) AS DefaultAna09ID, MAX(T1.DefaultAna10ID) AS DefaultAna10ID,  
 		MAX(T1.DefaultCashFlowID) AS DefaultCashFlowID,  
   
 		-- >>>>>>>>>>Tab 5 Khac  
@@ -139,7 +139,7 @@ BEGIN
 		CONVERT(BIT, 0) AS IsFee, '''' AS LinkFeeNo,  
 		CONVERT(VARCHAR(20), '''') AS DebitObjectTypeID, CONVERT(VARCHAR(20), '''') AS DebitObjectID, CONVERT(NVARCHAR(500), '''') AS DebitObjectName,  
 		CONVERT(VARCHAR(20), '''') AS CreditObjectTypeID, CONVERT(VARCHAR(20), '''') AS CreditObjectID, CONVERT(NVARCHAR(500), '''') AS CreditObjectName,  
-		CONVERT(BIT, 0) AS DefaultInfoDebit,   
+		CONVERT(BIT, 0) AS DefaultInfoDebit
 
 	 '  
 	 SET @StrSQL = @StrSQL + '  
@@ -262,7 +262,7 @@ BEGIN
       ELSE '''' END AS GroupID,  
     
     1 AS ExchangeRate,  T95.InventoryName AS RefDesc, T95.RefDate AS RefDate,     
-    CONVERT(NVARCHAR(500), T1.TransDescU)) AS TransDesc,   T95.RefNo AS RefNo,  T95.SerialNo AS Serial,  
+    CONVERT(NVARCHAR(500), T1.TransDescU) AS TransDesc,   T95.RefNo AS RefNo,  T95.SerialNo AS Serial,  
   
     -->>>>>>>>>>> Tab 1. Doi tuong  
   
