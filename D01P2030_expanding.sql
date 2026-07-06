@@ -65,7 +65,7 @@ BEGIN
 		CASE WHEN T1.Mode = 2 THEN D.GroupID ELSE C.GroupID END AS GroupID,  
     
 		1 AS ExchangeRate,  MAX(T95.InventoryName) AS RefDesc, T95.RefDate AS RefDate,     
-		CONVERT(NVARCHAR(500), MAX(T1.TransDescU) AS TransDesc,   T95.RefNo AS RefNo,  T95.SerialNo AS Serial,  
+		CONVERT(NVARCHAR(500), MAX(T1.TransDescU)) AS TransDesc,   T95.RefNo AS RefNo,  T95.SerialNo AS Serial,  
   
 		-->>>>>>>>>>> Tab 1. Doi tuong  
   
@@ -98,7 +98,7 @@ BEGIN
 		MAX(T1.DefaultAna01ID) AS Ana01ID, MAX(T1.DefaultAna02ID) AS Ana02ID, MAX(T1.DefaultAna03ID) AS Ana03ID, MAX(T1.DefaultAna04ID) AS Ana04ID , MAX(T1.DefaultAna05ID) AS Ana05ID,  
 		MAX(T1.DefaultAna06ID) AS Ana06ID, MAX(T1.DefaultAna07ID) AS Ana07ID, MAX(T1.DefaultAna08ID) AS Ana08ID, MAX(T1.DefaultAna09ID) AS Ana09ID, MAX(T1.DefaultAna10ID) AS Ana10ID,  
 		MAX(T1.DefaultAna01ID) AS DefaultAna01ID, MAX(T1.DefaultAna02ID) AS DefaultAna02ID, MAX(T1.DefaultAna03ID) AS DefaultAna03ID, MAX(T1.DefaultAna04ID) AS DefaultAna04ID, MAX(T1.DefaultAna05ID) AS DefaultAna05ID ,  
-		MAX(T1.DefaultAna06ID, MAX(T1.DefaultAna07ID) AS DefaultAna07ID, MAX(T1.DefaultAna08ID) AS DefaultAna08ID, MAX(T1.DefaultAna09ID) AS DefaultAna09ID, (T1.DefaultAna10ID) AS DefaultAna10ID,  
+		MAX(T1.DefaultAna06ID), MAX(T1.DefaultAna07ID) AS DefaultAna07ID, MAX(T1.DefaultAna08ID) AS DefaultAna08ID, MAX(T1.DefaultAna09ID) AS DefaultAna09ID, MAX(T1.DefaultAna10ID) AS DefaultAna10ID,  
 		MAX(T1.DefaultCashFlowID) AS DefaultCashFlowID,  
   
 		-- >>>>>>>>>>Tab 5 Khac  
@@ -262,7 +262,7 @@ BEGIN
       ELSE '''' END AS GroupID,  
     
     1 AS ExchangeRate,  T95.InventoryName AS RefDesc, T95.RefDate AS RefDate,     
-    CONVERT(NVARCHAR(500), T1.TransDescU) AS TransDesc,   T95.RefNo AS RefNo,  T95.SerialNo AS Serial,  
+    CONVERT(NVARCHAR(500), T1.TransDescU)) AS TransDesc,   T95.RefNo AS RefNo,  T95.SerialNo AS Serial,  
   
     -->>>>>>>>>>> Tab 1. Doi tuong  
   
@@ -298,10 +298,10 @@ BEGIN
     '+ CASE WHEN @UseInfoTax = 1 THEN 'ROUND(T95.CAmount, 0) + ROUND(T95.CVAT, 0)' ELSE '0' END +' AS TotalCAmount,  
   
     -- >>>>>>>>>> Tab 4. Khoan muc  
-    MAX(T1.DefaultAna01ID AS Ana01ID, MAX(T1.DefaultAna02ID AS Ana02ID, MAX(T1.DefaultAna03ID AS Ana03ID, MAX(T1.DefaultAna04ID AS Ana04ID , MAX(T1.DefaultAna05ID AS Ana05ID,  
-    MAX(T1.DefaultAna06ID AS Ana06ID, MAX(T1.DefaultAna07ID AS Ana07ID, MAX(T1.DefaultAna08ID AS Ana08ID, MAX(T1.DefaultAna09ID AS Ana09ID, T1.DefaultAna10ID AS Ana10ID,  
-    MAX(T1.DefaultAna01ID, MAX(T1.DefaultAna02ID, MAX(T1.DefaultAna03ID, MAX(T1.DefaultAna04ID, MAX(T1.DefaultAna05ID,  
-    MAX(T1.DefaultAna06ID, MAX(T1.DefaultAna07ID, MAX(T1.DefaultAna08ID, MAX(T1.DefaultAna09ID, T1.DefaultAna10ID,  
+    T1.DefaultAna01ID AS Ana01ID, T1.DefaultAna02ID AS Ana02ID, T1.DefaultAna03ID AS Ana03ID, T1.DefaultAna04ID AS Ana04ID , T1.DefaultAna05ID AS Ana05ID,  
+    T1.DefaultAna06ID AS Ana06ID, T1.DefaultAna07ID AS Ana07ID, T1.DefaultAna08ID AS Ana08ID, T1.DefaultAna09ID AS Ana09ID, T1.DefaultAna10ID AS Ana10ID,  
+    T1.DefaultAna01ID, T1.DefaultAna02ID, T1.DefaultAna03ID, T1.DefaultAna04ID, T1.DefaultAna05ID,  
+    T1.DefaultAna06ID, T1.DefaultAna07ID, T1.DefaultAna08ID, T1.DefaultAna09ID, T1.DefaultAna10ID,  
     T1.DefaultCashFlowID,  
   
     -- >>>>>>>>>>Tab 5 Khac  
