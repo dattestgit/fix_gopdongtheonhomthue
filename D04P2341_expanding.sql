@@ -431,7 +431,7 @@ ELSE -- Load du lieu luoi 1, luoi 2
    '  
    SET @sSQL3 = '  
    SELECT  0 AS OrdinaryNo,MAX(T95.InventoryName) AS ItemName,    
-      MAX(T04.AccountID) AS AccountID,MAX(T04.CorAccountID) AS CorAccountID,     
+      T04.AccountID AS AccountID,T04.CorAccountID AS CorAccountID,     
       SUM(T95.Amount) AS OriginalAmount,   SUM(T95.Amount) AS ConvertedAmount,   
             T95.ObjectID,     T95.ObjectTypeID,  T95.ObjectName,    
       ''VND'' AS CurrencyID,   1 AS ExchangeRate,   T95.SerialNo AS Serial,      
