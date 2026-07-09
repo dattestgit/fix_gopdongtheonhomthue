@@ -106,8 +106,8 @@ BEGIN
  '  
  SELECT  CONVERT(TINYINT, 0) AS OrderNo,   
     MAX(T95.InventoryName) AS ItemName,   
-    '+ CASE WHEN @TransactionTypeID = 'DBT' THEN ' '''' ' ELSE ' T04.CorAccountID ' END +' AS DebitAccountID,   
-    '+ CASE WHEN @TransactionTypeID = 'DBT' THEN ' T04.CorAccountID ' ELSE ' '''' ' END +' AS CreditAccountID,   
+    '+ CASE WHEN @TransactionTypeID = 'DBT' THEN ' '''' ' ELSE ' MAX(T04.CorAccountID) ' END +' AS DebitAccountID,   
+    '+ CASE WHEN @TransactionTypeID = 'DBT' THEN ' MAX(T04.CorAccountID) ' ELSE ' '''' ' END +' AS CreditAccountID,   
     SUM(T95.Amount) AS OriginalAmount, SUM(T95.Amount) AS ConvertedAmount,           
     ISNULL(T95.ObjectTypeID,'''')  AS ObjectTypeID, ISNULL(T95.ObjectID,'''') AS ObjectID , ISNULL(T95.ObjectName,'''')  AS ObjectName  
           
@@ -123,7 +123,7 @@ BEGIN
     ,CASE WHEN ISNULL(MAX(T1320.DefaultAna09ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna09ID) END AS Ana09ID  
     ,CASE WHEN ISNULL(MAX(T1320.DefaultAna10ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna10ID) END AS Ana10ID  
   											  
-    , T95.VATGroupID, T95.VATRate/100 AS RateTax, T04.VATAccountID AS VATAccountID, MAX(T95.InventoryName) AS VATItemDesc,   
+    , T95.VATGroupID, T95.VATRate/100 AS RateTax, MAX(T04.VATAccountID) AS VATAccountID, MAX(T95.InventoryName) AS VATItemDesc,   
     SUM(T95.CVAT) AS OVATAmount, SUM(T95.CVAT) AS CVATAmount,  
     CONVERT(VARCHAR(20),'''') AS VATAuthorityTypeID, CONVERT(VARCHAR(20),'''') AS VATAuthorityID, CONVERT(NVARCHAR(500),'''') AS VATAuthorityName,  
             CONVERT(VARCHAR(20),'''') AS CipID, CONVERT(VARCHAR(20),'''') AS CipNo,  
@@ -179,38 +179,39 @@ BEGIN
  WHERE  T95.VoucherID = '''+@OBatchID+'''  
  AND   T95.Amount <> 0  
  AND   T95.IsCreated = 0  
- GROUP BY T95.RefNo,T95.RefDate,T95.SerialNo,T95.VoucherID,T95.VatGroup,T95.ObjectTypeID,T95.ObjectName,T95.ObjectAddress,T95.ObjectID,T95.VATGroupID,T95.VATRate,T04.CorAccountID,T04.AccountID,D90D.AccountID,D90C.OffAccount,D90D.OffAccount,D90C.AccountID  
+ GROUP BY T95.RefNo,T95.RefDate,T95.SerialNo,T95.VoucherID,T95.VatGroup,T95.ObjectTypeID,T95.ObjectName,T95.TaxCode
+ ,T95.ObjectAddress,T95.ObjectID,T95.VATGroupID,T95.VATRate,T04.CorAccountID,T04.AccountID,D90D.AccountID,D90C.OffAccount,D90D.OffAccount,D90C.AccountID  
  '
 
   SET @sSQL3=
   ' 
- UPDATE  T1  
- SET   T1.ObjectID   = '''' ,  
-    T1.ObjectTypeID  = '''' ,  
-    T1.VATObjectID  = '''' ,  
-    T1.VATObjectTypeID = ''''  
- FROM  #Result_D04F2326 T1  
- WHERE  NOT EXISTS ( SELECT 1 FROM Object T2 WITH(NOLOCK) WHERE T1.ObjectTypeID = T2.ObjectTypeID AND T1.ObjectID = T2.ObjectID )  
- AND   T1.ObjectTypeID <> ''''   
- AND   T1.ObjectID <> ''''   
+ --UPDATE  T1  
+ --SET   T1.ObjectID   = '''' ,  
+ --   T1.ObjectTypeID  = '''' ,  
+ --   T1.VATObjectID  = '''' ,  
+ --   T1.VATObjectTypeID = ''''  
+ --FROM  #Result_D04F2326 T1  
+ --WHERE  NOT EXISTS ( SELECT 1 FROM Object T2 WITH(NOLOCK) WHERE T1.ObjectTypeID = T2.ObjectTypeID AND T1.ObjectID = T2.ObjectID )  
+ --AND   T1.ObjectTypeID <> ''''   
+ --AND   T1.ObjectID <> ''''   
   
- UPDATE T1  
- SET     T1.ObjectTypeID      = T2.ObjectTypeID,  
-   T1.ObjectID          = T2.ObjectID,  
-   T1.ObjectName        = CASE WHEN T1.ObjectName = '''' THEN T2.ObjectNameU ELSE T1.ObjectName END,  
-   T1.VATObjectTypeID   = T2.ObjectTypeID,  
-   T1.VATObjectID       = T2.ObjectID,  
-   T1.VATObjectName     = CASE WHEN T1.VATObjectName = '''' THEN T2.ObjectNameU ELSE T1.VATObjectName END  
- FROM    #Result_D04F2326 T1  
- OUTER APPLY (  
-  SELECT TOP 1 T2.ObjectTypeID, T2.ObjectID, T2.ObjectNameU  
-  FROM  Object T2 WITH(NOLOCK)  
-  WHERE  T1.VATNo = T2.VATNo  
-   AND  T2.Disabled = 0  
-  ORDER BY T2.ObjectTypeID ASC  
- ) T2  
- WHERE   ISNULL(T1.ObjectTypeID,'''') = ''''  
-  OR  ISNULL(T1.ObjectID,'''') = ''''  
+ --UPDATE T1  
+ --SET     T1.ObjectTypeID      = T2.ObjectTypeID,  
+ --  T1.ObjectID          = T2.ObjectID,  
+ --  T1.ObjectName        = CASE WHEN T1.ObjectName = '''' THEN T2.ObjectNameU ELSE T1.ObjectName END,  
+ --  T1.VATObjectTypeID   = T2.ObjectTypeID,  
+ --  T1.VATObjectID       = T2.ObjectID,  
+ --  T1.VATObjectName     = CASE WHEN T1.VATObjectName = '''' THEN T2.ObjectNameU ELSE T1.VATObjectName END  
+ --FROM    #Result_D04F2326 T1  
+ --OUTER APPLY (  
+ -- SELECT TOP 1 T2.ObjectTypeID, T2.ObjectID, T2.ObjectNameU  
+ -- FROM  Object T2 WITH(NOLOCK)  
+ -- WHERE  T1.VATNo = T2.VATNo  
+ --  AND  T2.Disabled = 0  
+ -- ORDER BY T2.ObjectTypeID ASC  
+ --) T2  
+ --WHERE   ISNULL(T1.ObjectTypeID,'''') = ''''  
+ -- OR  ISNULL(T1.ObjectID,'''') = ''''  
   
  UPDATE  #Result_D04F2326  
  SET   VATAuthorityTypeID = ObjectTypeID,  
@@ -429,46 +430,46 @@ ELSE -- Load du lieu luoi 1, luoi 2
        )  
    '  
    SET @sSQL3 = '  
-   SELECT  0 AS OrdinaryNo,   T95.InventoryName AS ItemName,    
-      T04.AccountID AS AccountID,   T04.CorAccountID AS CorAccountID,     
-      T95.Amount AS OriginalAmount,   T95.Amount AS ConvertedAmount,   
+   SELECT  0 AS OrdinaryNo,MAX(T95.InventoryName) AS ItemName,    
+      MAX(T04.AccountID) AS AccountID,MAX(T04.CorAccountID) AS CorAccountID,     
+      SUM(T95.Amount) AS OriginalAmount,   SUM(T95.Amount) AS ConvertedAmount,   
             T95.ObjectID,     T95.ObjectTypeID,  T95.ObjectName,    
       ''VND'' AS CurrencyID,   1 AS ExchangeRate,   T95.SerialNo AS Serial,      
       T95.RefNo,      T95.RefDate,       
       NULL AS DueDate   
            --,'''' AS Ana01ID, '''' AS Ana02ID, '''' AS Ana03ID, '''' AS Ana04ID, '''' AS Ana05ID,   
            --'''' AS Ana06ID, '''' AS Ana07ID, '''' AS Ana08ID, '''' AS Ana09ID, '''' AS Ana10ID   
-      ,CASE WHEN ISNULL(T1320.DefaultAna01ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna01ID END AS Ana01ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna02ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna02ID END AS Ana02ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna03ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna03ID END AS Ana03ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna04ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna04ID END AS Ana04ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna05ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna05ID END AS Ana05ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna06ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna06ID END AS Ana06ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna07ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna07ID END AS Ana07ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna08ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna08ID END AS Ana08ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna09ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna09ID END AS Ana09ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna10ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna10ID END AS Ana10ID  
-           ,T04.VATTypeID AS VATTypeID,    T95.VATGroupID,   T95.InventoryName AS VATItemName,    
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna01ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna01ID) END AS Ana01ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna02ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna02ID) END AS Ana02ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna03ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna03ID) END AS Ana03ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna04ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna04ID) END AS Ana04ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna05ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna05ID) END AS Ana05ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna06ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna06ID) END AS Ana06ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna07ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna07ID) END AS Ana07ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna08ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna08ID) END AS Ana08ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna09ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna09ID) END AS Ana09ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna10ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna10ID) END AS Ana10ID  
+           ,T04.VATTypeID AS VATTypeID,    T95.VATGroupID,   MAX(T95.InventoryName) AS VATItemName,    
            ISNULL(T04.VATInOut, 0) AS IsOut,    
       T95.ObjectTypeID AS VATObjectTypeID, T95.ObjectID AS VATObjectID, T95.ObjectName AS VATObjectName,          
       T95.ObjectAddress AS VATObjectAddress,   
       T95.TaxCode AS VATNo,  '''' AS CipID,      
       --D02.CipNo,   
-      '''' AS PeriodID,    '''' AS DiscountID,    T95.PaymentMethodID,  
+      '''' AS PeriodID,    '''' AS DiscountID,   MAX(T95.PaymentMethodID) AS PaymentMethodID,  
       0 AS Operator,     0 AS OriginalDecimal,  0 AS ExchangeRateDecimal,        
       '''' AS BatchID,    '''' AS RPTransactionID,   
       '''' AS GroupID,    '''' AS TransactionID,  '''' AS LCNo,  
       '''' AS CreateUserID,  NULL AS CreateDate,  '''' AS LastModifyUserID,   NULL AS LastModifyDate,      
       '''' AS POID,    '''' AS SOID,  
       '''' AS POVoucherNo,  '''' AS SOVoucherNo,  
-      T95.BankAccountNo,      
+      MAX(T95.BankAccountNo) AS BankAccountNo,      
       '''' AS InventoryID,  '''' AS InventoryName,  
       '''' AS ProjectID,   '''' AS ProjectName, '''' AS TaskID,  '''' AS TaskName,  
       '''' AS CashFlowID,  
       '''' AS BudgetID,   '''' AS BudgetName,  
       '''' AS BudgetItemID,  '''' AS BudgetItemName,  0 AS LockAnalysis,  
       '''' AS SBatchID,  '''' AS STransID, '''' AS STransType,  
-      T95.VoucherID AS OBatchID, T95.TransID AS OTransID, ''D95_InputInvoice'' AS OTransType, '''' AS OVoucherNo,  
+      T95.VoucherID AS OBatchID,MAX(T95.TransID) AS OTransID, ''D95_InputInvoice'' AS OTransType, '''' AS OVoucherNo,  
       '''' AS PropertyProductID,  
       '''' AS DebtManagerTypeID, '''' AS DebtManagerID, '''' AS DebtManagerName,  
       '''' AS PContractID, '''' AS PContractNo, '''' AS SContractID, '''' ASSContractNo,  
@@ -491,50 +492,52 @@ ELSE -- Load du lieu luoi 1, luoi 2
    WHERE  CHARINDEX('';''+T95.VoucherID+'';'', '';''+'''+@OBatchID+'''+'';'') > 0  
    AND   T95.Amount <> 0  
    AND   T95.IsCreated = 0  
+   GROUP BY T95.RefNo,T95.RefDate,T95.SerialNo,T95.VoucherID,T95.VatGroup,T95.ObjectTypeID,T95.ObjectName,T95.TaxCode,
+	T95.ObjectAddress,T95.ObjectID,T95.VATGroupID,T95.VATRate,T04.CorAccountID,T04.AccountID,D90D.AccountID,D90C.OffAccount,D90D.OffAccount,D90C.AccountID,T04.VATTypeID,T04.VATInOut
    '  
    SET @sSQL3 = @sSQL3 + '  
    UNION ALL  
-   SELECT  1 AS OrdinaryNo,   T95.InventoryName AS ItemName,    
+   SELECT  1 AS OrdinaryNo,  MAX(T95.InventoryName) AS ItemName,    
       T04.AccountID AS AccountID,   T04.CorAccountID AS CorAccountID,     
-      T95.CVAT AS OriginalAmount,   T95.CVAT AS ConvertedAmount,   
-            T95.ObjectID,     T95.ObjectTypeID,  T95.ObjectName,           
+      SUM(T95.CVAT) AS OriginalAmount,   SUM(T95.CVAT) AS ConvertedAmount,   
+         MAX(T95.ObjectID) ObjectID,     T95.ObjectTypeID,  T95.ObjectName,           
       ''VND'' AS CurrencyID,   1 AS ExchangeRate,   T95.SerialNo AS Serial,      
       T95.RefNo,      T95.RefDate,       
       NULL AS DueDate  
            --,'''' AS Ana01ID, '''' AS Ana02ID, '''' AS Ana03ID, '''' AS Ana04ID, '''' AS Ana05ID,   
            --'''' AS Ana06ID, '''' AS Ana07ID, '''' AS Ana08ID, '''' AS Ana09ID, '''' AS Ana10ID   
-      ,CASE WHEN ISNULL(T1320.DefaultAna01ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna01ID END AS Ana01ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna02ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna02ID END AS Ana02ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna03ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna03ID END AS Ana03ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna04ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna04ID END AS Ana04ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna05ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna05ID END AS Ana05ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna06ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna06ID END AS Ana06ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna07ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna07ID END AS Ana07ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna08ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna08ID END AS Ana08ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna09ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna09ID END AS Ana09ID  
-      ,CASE WHEN ISNULL(T1320.DefaultAna10ID, '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE T1320.DefaultAna10ID END AS Ana10ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna01ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna01ID) END AS Ana01ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna02ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna02ID) END AS Ana02ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna03ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna03ID) END AS Ana03ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna04ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna04ID) END AS Ana04ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna05ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna05ID) END AS Ana05ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna06ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna06ID) END AS Ana06ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna07ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna07ID) END AS Ana07ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna08ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna08ID) END AS Ana08ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna09ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna09ID) END AS Ana09ID  
+      ,CASE WHEN ISNULL(MAX(T1320.DefaultAna10ID), '''') = '''' THEN  CONVERT(VARCHAR(20),'''') ELSE MAX(T1320.DefaultAna10ID) END AS Ana10ID  
   
-           ,T04.VATTypeID AS VATTypeID,    T95.VATGroupID,   T95.InventoryName AS VATItemName,    
+           ,T04.VATTypeID AS VATTypeID,MAX(T95.VATGroupID), MAX(T95.InventoryName) AS VATItemName,    
            ISNULL(T04.VATInOut, 0) AS IsOut,    
-      T95.ObjectTypeID AS VATObjectTypeID, T95.ObjectID AS VATObjectID, T95.ObjectName AS VATObjectName,       
-      T95.ObjectAddress AS VATObjectAddress,   
+      MAX(T95.ObjectTypeID) AS VATObjectTypeID,MAX(T95.ObjectID) AS VATObjectID,MAX(T95.ObjectName) AS VATObjectName,       
+	  T95.ObjectAddress AS VATObjectAddress,   
       T95.TaxCode AS VATNo,  '''' AS CipID,      
       --D02.CipNo,   
-      '''' AS PeriodID,    '''' AS DiscountID,    T95.PaymentMethodID,  
+      '''' AS PeriodID,    '''' AS DiscountID, MAX(T95.PaymentMethodID) PaymentMethodID,  
       0 AS Operator,     0 AS OriginalDecimal,  0 AS ExchangeRateDecimal,        
       '''' AS BatchID,    '''' AS RPTransactionID,   
       '''' AS GroupID,    '''' AS TransactionID,  '''' AS LCNo,  
       '''' AS CreateUserID,  NULL AS CreateDate,  '''' AS LastModifyUserID,   NULL AS LastModifyDate,      
       '''' AS POID,    '''' AS SOID,  
       '''' AS POVoucherNo,  '''' AS SOVoucherNo,  
-      T95.BankAccountNo,      
+      MAX(T95.BankAccountNo) BankAccountNo,      
       '''' AS InventoryID,  '''' AS InventoryName,  
       '''' AS ProjectID,   '''' AS ProjectName, '''' AS TaskID,  '''' AS TaskName,  
       '''' AS CashFlowID,  
       '''' AS BudgetID,   '''' AS BudgetName,  
       '''' AS BudgetItemID,  '''' AS BudgetItemName,  0 AS LockAnalysis,  
       '''' AS SBatchID,  '''' AS STransID, '''' AS STransType,  
-      T95.VoucherID AS OBatchID, T95.TransID AS OTransID, ''D95_InputInvoice'' AS OTransType, '''' AS OVoucherNo,  
+      T95.VoucherID AS OBatchID,MAX(T95.TransID) AS OTransID, ''D95_InputInvoice'' AS OTransType, '''' AS OVoucherNo,  
       '''' AS PropertyProductID,  
       '''' AS DebtManagerTypeID, '''' AS DebtManagerID, '''' AS DebtManagerName,  
       '''' AS PContractID, '''' AS PContractNo, '''' AS SContractID, '''' AS SContractNo,  
@@ -555,6 +558,8 @@ ELSE -- Load du lieu luoi 1, luoi 2
    WHERE  CHARINDEX('';''+T95.VoucherID+'';'', '';''+'''+@OBatchID+'''+'';'') > 0  
    AND T95.CVAT <> 0  
    AND   T95.IsCreated = 0  
+   GROUP BY T95.RefNo,T95.RefDate,T95.SerialNo,T95.VoucherID,T95.VatGroup,T95.ObjectTypeID,T95.ObjectName,T95.TaxCode,
+	T95.ObjectAddress,T95.ObjectID,T95.VATGroupID,T95.VATRate,T04.CorAccountID,T04.AccountID,D90D.AccountID,D90C.OffAccount,D90D.OffAccount,D90C.AccountID,T04.VATTypeID,T04.VATInOut
      
    IF EXISTS ( SELECT 1 FROM D91T9130 WITH(NOLOCK) WHERE Customize = ''UseModeTHF'' AND Value = 1 )  --- Han fix dac thu tai khoan dong thue cho THF do chua co thiet lap 2026/02/12  
    BEGIN  
@@ -609,233 +614,6 @@ ELSE -- Load du lieu luoi 1, luoi 2
    ORDER BY OBatchID, OTransID, OrdinaryNo  
    '  
    END  
- ELSE IF @FormID = 'D80F2115'   
- BEGIN  
-  SET @sSQL3 =  
-   '  
-     
-   INSERT INTO #D04P2331Grid  
-     (OrdinaryNo,        ItemName,           AccountID,          CorAccountID,       OriginalAmount,  
-     ConvertedAmount,   ObjectID,           ObjectTypeID,       ObjectName,         CurrencyID,  
-     ExchangeRate,      Serial,             RefNo,              RefDate,            DueDate,  
-     Ana01ID,           Ana02ID,            Ana03ID,            Ana04ID,            Ana05ID,  
-     Ana06ID,           Ana07ID,            Ana08ID,            Ana09ID,            Ana10ID,  
-     VATTypeID,         VATGroupID,         VATItemName,        IsOut,              VATObjectTypeID,  
-     VATObjectID,       VATObjectName,      VATObjectAddress,   VATNo,              CipID,  
-     PeriodID,          DiscountID,         PaymentMethodID,    Operator,           OriginalDecimal,  
-     ExchangeRateDecimal, BatchID,          RPTransactionID,    GroupID,            TransactionID,  
-     LCNo,              CreateUserID,       CreateDate,         LastModifyUserID,   LastModifyDate,  
-     POID,              SOID,               POVoucherNo,        SOVoucherNo,        BankAccountNo,  
-     InventoryID,       InventoryName,      ProjectID,          ProjectName,        TaskID,  
-     TaskName,          CashFlowID,         BudgetID,           BudgetName,         BudgetItemID,  
-     BudgetItemName,    LockAnalysis,       SBatchID,           STransID,           STransType,  
-     OBatchID,          OTransID,           OTransType,         OVoucherNo,         PropertyProductID,  
-     DebtManagerTypeID, DebtManagerID,      DebtManagerName,    PContractID,        PContractNo,  
-     SContractID,       SContractNo,        CRVoucherID,        RefStr01,           RefStr02,  
-     RefStr03,          RefStr04,           RefStr05,           RefNum01,           RefNum02,  
-     RefNum03,          RefNum04,           RefNum05,           RefDate01,          RefDate02,  
-     RefDate03,         RefDate04,          RefDate05,          OffAccountDebit,    OffAccountCredit, IsInherit  
-     )  
-   SELECT   
-     ROW_NUMBER() OVER (ORDER BY OrdinaryNo ASC) OrdinaryNo,       ItemName,           AccountID,          CorAccountID,       OriginalAmount,  
-     ConvertedAmount,   ObjectID,           ObjectTypeID,       ObjectName,         CurrencyID,  
-     ExchangeRate,      Serial,             RefNo,              RefDate,            DueDate,  
-     Ana01ID,           Ana02ID,            Ana03ID,            Ana04ID,            Ana05ID,  
-     Ana06ID,           Ana07ID,            Ana08ID,            Ana09ID,            Ana10ID,  
-     VATTypeID,         VATGroupID,         VATItemName,        IsOut,              VATObjectTypeID,  
-     VATObjectID,       VATObjectName,      VATObjectAddress,   VATNo,              CipID,  
-     PeriodID,          DiscountID,         PaymentMethodID,    Operator,           OriginalDecimal,  
-     ExchangeRateDecimal, BatchID,          RPTransactionID,    GroupID,            TransactionID,  
-     LCNo,              CreateUserID,       CreateDate,         LastModifyUserID,   LastModifyDate,  
-     POID,              SOID,               POVoucherNo,        SOVoucherNo,        BankAccountNo,  
-     InventoryID,       InventoryName,      ProjectID,          ProjectName,        TaskID,  
-     TaskName,          CashFlowID,         BudgetID,           BudgetName,         BudgetItemID,  
-     BudgetItemName,    LockAnalysis,       SBatchID,           STransID,           STransType,  
-     OBatchID,          OTransID,           OTransType,         OVoucherNo,         PropertyProductID,  
-     DebtManagerTypeID, DebtManagerID,      DebtManagerName,    PContractID,        PContractNo,  
-     SContractID,       SContractNo,        CRVoucherID,        RefStr01,           RefStr02,  
-     RefStr03,          RefStr04,           RefStr05,           RefNum01,           RefNum02,  
-     RefNum03,          RefNum04,           RefNum05,           RefDate01,          RefDate02,  
-     RefDate03,         RefDate04,          RefDate05,          OffAccountDebit,    OffAccountCredit, IsInherit  
-   FROM [#Result_'+@UserID+']  
-   WHERE Source = '+STR(@Source)+'  
-   ORDER BY OrdinaryNo  
-     
-   SELECT  *   
-   FROM  #D04P2331Grid   
-   ORDER BY OrdinaryNo  
-   '  
-  END  
-   ELSE  
-   BEGIN  
-      SET @sSQL2 =' INSERT #D04P2331Grid   
-       (OrdinaryNo,    ItemName,    AccountID,  
-        CorAccountID,     OriginalAmount,   ConvertedAmount,   
-             ObjectID,      ObjectTypeID,    
-             --OB.ObjectName,   
-       CurrencyID,     ExchangeRate,    Serial,      
-       RefNo,       RefDate,       
-       DueDate,   
-            Ana01ID, Ana02ID, Ana03ID, Ana04ID, Ana05ID,   
-            Ana06ID, Ana07ID, Ana08ID, Ana09ID, Ana10ID,   
-            VATTypeID,      VATGroupID,    VATItemName,    
-            IsOut,      VATObjectTypeID,   VATObjectID,   
-       VATObjectName,          VATObjectAddress,   
-       VATNo,           CipID,      
-       --D02.CipNo,   
-       PeriodID,      DiscountID,    PaymentMethodID,  
-       Operator,      OriginalDecimal,   ExchangeRateDecimal,        
-       BatchID,      RPTransactionID,   
-       GroupID,      TransactionID,    LCNo,  
-       CreateUserID,    CreateDate,    LastModifyUserID,   LastModifyDate,      
-       POID,      SOID,  
-       POVoucherNo,  
-       SOVoucherNo,  
-       BankAccountNo,      
-       InventoryID,   InventoryName,  
-       ProjectID,    ProjectName,    TaskID,     TaskName,  
-       CashFlowID,  
-       BudgetID,    BudgetName,  
-       BudgetItemID,   BudgetItemName,  LockAnalysis,  
-       SBatchID,  STransID, STransType,  
-       OBatchID, OTransID, OTransType, OVoucherNo,  
-       PropertyProductID,  
-       DebtManagerTypeID,  
-       DebtManagerID,  
-       DebtManagerName,  
-       PContractID, PContractNo , SContractID , SContractNo,  
-       CRVoucherID,  
-       RefStr01, RefStr02, RefStr03, RefStr04, RefStr05,  
-       RefNum01, RefNum02, RefNum03, RefNum04, RefNum05,  
-       RefDate01, RefDate02, RefDate03, RefDate04, RefDate05,OffAccountDebit,OffAccountCredit, IsInherit  
-       )  
-     SELECT  OrdinaryNo,     ItemName'+@U+' AS ItemName,     '+CASE WHEN @Source=1 THEN 'DebitAccountID' ELSE 'CreditAccountID' END+' AS AccountID,  
-       CorAccountID,     OriginalAmount,   ConvertedAmount,   
-             COALESCE(T03.ObjectID, DebitObjectID, CreditObjectID ) AS ObjectID,   
-       COALESCE(T03.ObjectTypeID, DebitObjectTypeID, CreditObjectTypeID ) AS ObjectTypeID,  
-       --OB.ObjectName,   
-       T03.CurrencyID,    T03.ExchangeRate,   T03.Serial,      
-       T03.RefNo,                    
-       T03.RefDate,  
-       CONVERT(varchar(10), T03.DueDate, 103) AS DueDate,   
-            T03.Ana01ID, T03.Ana02ID, T03.Ana03ID, T03.Ana04ID, T03.Ana05ID,   
-            T03.Ana06ID, T03.Ana07ID, T03.Ana08ID, T03.Ana09ID, T03.Ana10ID,   
-            T03.VATTypeID,     T03.VATGroupID,   T03.VATItemName'+@U+' AS VATItemName,    
-            D91.IsOut,     T03.VATObjectTypeID,  T03.VATObjectID,   
-       T03.Object_Name'+@U+' AS VATObjectName,     T03.Object_Address'+@U+' AS VATObjectAddress,   
-       T03.VATNo,          T03.CipID,      
-       --D02.CipNo,   
-       PeriodID,      T03.DiscountID,   T03.PaymentMethodID,  
-       V10.Operator,     V10.OriginalDecimal, V10.ExchangeRateDecimal,        
-       T03.BatchID,     T03.RPTransactionID,   
-       Convert(varchar(50),'''') AS GroupID,     Convert(varchar(50),'''') AS TransactionID,  T03.LCNo,  
-       ' + CASE WHEN @IsInherit = 1   
-        THEN ' '''' AS CreateUserID, NULL AS CreateDate, '''' AS LastModifyUserID, NULL AS LastModifyDate, '  
-        ELSE ' T03.CreateUserID, T03.CreateDate, T03.LastModifyUserID, T03.LastModifyDate, '   
-        END + '    
-       T03.POID,    T03.SOID,  
-       Convert(varchar(50),'''') As POVoucherNo,  
-       Convert(varchar(50),'''') As SOVoucherNo,  
-       ISNULL(T03.BankAccountNo, '''') AS BankAccountNo,  
-       T03.InventoryID,    T03.InventoryName'+@U+' AS InventoryName,  
-       ISNULL(T03.ProjectID,''''),  ISNULL(T03.ProjectName'+@U+',''''),  
-       ISNULL(T03.TaskID,''''),  ISNULL(T03.TaskName'+@U+',''''),  
-       T03.CashFlowID,  
-       T03.BudgetID,     T03.BudgetName,  
-       T03.BudgetItemID,      T03.BudgetItemName,  
-       0 As LockAnalysis,  
-       T03.SBatchID,  T03.STransID, T03.STransType,  
-       T03.OBatchID, T03.OTransID, T03.OTransType, T03.OVoucherNo,  
-       T03.PropertyProductID,  
-       T03.DebtManagerTypeID,  
-       T03.DebtManagerID,  
-       CONVERT(NVARCHAR(250),'''') AS DebtManagerName,  
-       T03.PContractID, T03.PContractNo , T03.SContractID , T03.SContractNo,  
-       CONVERT(varchar(50), '''') AS CRVoucherID,  
-       T04.RefStr01, T04.RefStr02, T04.RefStr03, T04.RefStr04, T04.RefStr05,  
-       T04.RefNum01, T04.RefNum02, T04.RefNum03, T04.RefNum04, T04.RefNum05,  
-       T04.RefDate01, T04.RefDate02, T04.RefDate03, T04.RefDate04, T04.RefDate05,   
-       CASE WHEN T03.DebitAccountID  = D90D.AccountID AND D90D.OffAccount = 1 THEN CONVERT(bit, 1) ELSE CONVERT(bit, 0) END AS OffAccountDebit,   
-       CASE WHEN T03.CreditAccountID  = D90C.AccountID AND D90C.OffAccount = 1 THEN CONVERT(bit, 1) ELSE CONVERT(bit, 0) END AS OffAccountCredit,  
-       T03.IsInherit  
-     FROM   D04T0003 T03 With ( NoLock )  
-     -- LEFT JOIN  D02T0100 D02 WITH(NOLOCK)   ON  D02.CipID = T03.CipID  
-     LEFT JOIN  D91V0010 V10 WITH(NOLOCK)   ON  T03.CurrencyID = V10.CurrencyID  
-     --LEFT JOIN  Object OB WITH(NOLOCK)   ON OB.ObjectTypeID = T03.ObjectTypeID   AND OB.ObjectID = T03.ObjectID  
-     LEFT JOIN D91T9001 D91 WITH(NOLOCK)  ON D91.VATTypeID = T03.VATTypeID  
-     --LEFT JOIN  D06T2510 D06 WITH(NOLOCK) ON T03.POID=D06.POID AND D06.[Status] IN (1,2,3,4)   
-     --LEFT JOIN  D05T0016 D05 WITH(NOLOCK) ON T03.SOID=D05.QuotationID  AND D05.STATUS <> ''0100000000'' AND D05.ProfessionKind=''O''  
-     LEFT JOIN D04T0004 T04 WITH(NOLOCK)  
-      ON T03.RPTransactionID = T04.RPTransactionID   
-      AND T03.GroupID = T04.GroupID   
-      AND T03.BatchID = T04.BatchID  
-      AND T03.DivisionID = T04.DivisionID  
-     LEFT JOIN D90T0001 D90D ON T03.DebitAccountID = D90D.AccountID  
-     LEFT JOIN D90T0001 D90C ON T03.CreditAccountID = D90C.AccountID  
-     WHERE   T03.GroupID = '''+@GroupID+'''   
-       AND T03.DivisionID = '''+@DivisionID+'''          
-       AND T03.TransactionTypeID = ''SGT''   
-       AND '+CASE WHEN @Source=1 THEN 'CreditAccountID' ELSE 'DebitAccountID' END+' IS NULL  
-     ORDER BY  OrdinaryNo ASC '  
- SET @sSQL3 ='     
-     UPDATE     T  
-     SET T.ObjectName = Obj.ObjectName'+@U+'  
-     FROM #D04P2331Grid T LEFT JOIN  Object Obj  ON T.ObjectTypeID = Obj.ObjectTypeID AND T.ObjectID = Obj.ObjectID   
-       
-     UPDATE     T   
-     SET T.CipNo = D02.CipNo  
-     FROM #D04P2331Grid T LEFT JOIN D02T0100 D02 ON T.CipID = D02.CipID  
-       
-       
-     UPDATE  T   
-     SET POVoucherNo = ISNULL(D06.VoucherNo,'''')  
-     FROM #D04P2331Grid T LEFT JOIN  D06T2510 D06 ON T.POID =D06.POID AND D06.[Status] IN (1,2,3,4)   
-       
-     UPDATE  T   
-     SET  SOVoucherNo  = ISNULL(D05.VoucherNum,'''')  
-     FROM #D04P2331Grid T LEFT JOIN   D05T0016 D05 ON T.SOID=D05.QuotationID  AND D05.STATUS <> ''0100000000'' AND D05.ProfessionKind=''O''  
-  
-  
-     UPDATE   T  
-     SET   T.LockAnalysis = CASE WHEN D.IsMappingAnalysis = 1 THEN 1 ELSE 0 END  
-     FROM  #D04P2331Grid T  
-     LEFT JOIN  
-     (SELECT  T1.AccountID,    
-        CASE WHEN T1.IsMappingAnalysis = 1 AND ISNULL(T3.AccountID, '''') <> ''''   
-        THEN 1 ELSE 0 END AS IsMappingAnalysis  
-     FROM  D90T0001 T1 WITH(NOLOCK)  
-     LEFT JOIN (SELECT DISTINCT T2.AccountID FROM D90T0303 T2 WITH(NOLOCK)) T3  
-       ON T3.AccountID = T1.AccountID ) D  
-       ON D.AccountID = T.AccountID  
-     '  
-     + CASE WHEN @Source = 2 THEN ' ----- DAO TAI KHOAN CHO LUOI 2 DE KIEM TRA BUT TOAN DON  
-      UPDATE T   
-      SET T.OffAccountDebit = T.OffAccountCredit ,  
-       T.OffAccountCredit = T.OffAccountDebit  
-       FROM  #D04P2331Grid T ' ELSE '' END  
-     +  
-     '   
-     UPDATE T  
-     SET T.DebtManagerName = OB.ObjectName'+@U+'  
-     FROM  #D04P2331Grid T   
-     INNER JOIN Object OB WITH(NOLOCK) ON T.DebtManagerID = OB.ObjectID AND T.DebtManagerTypeID = OB.ObjectTypeID   
-       
-     '+CASE WHEN @IsInherit = 1 THEN '  
-     UPDATE  #D04P2331Grid  
-     SET   PContractID = '''', PContractNo = '''', SContractID = '''', SContractNo = '''',  
-        CRVoucherID = '''', OBatchID = '''', OTransID = '''', OVoucherNo = '''', SBatchID = '''', STransID = '''', POID = '''',   
-        SOID = '''', POVoucherNo = '''', SOVoucherNo = '''', GroupID = '''', TransactionID = '''',   
-        BatchID = '''', RPTransactionID =  '''', RefDate = GETDATE(), DueDate = CONVERT(VARCHAR(10), GETDATE(), 103),  
-        IsInherit = 1         
-        ' ELSE '' END +'   
-         
-     SELECT *   
-     FROM #D04P2331Grid WITH(NOLOCK)  
-     ORDER BY OrdinaryNo ASC  
-       
-     DROP TABLE #D04P2331Grid   
-     '  
-  END  
      --print (@sSQL1+@sSQL2+ @sSQL3)  
      EXEC(@sSQL1+@sSQL2+@sSQL3)  
  END -- Load du lieu luoi 1, luoi 2  
